@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Create app directory
 
@@ -10,6 +10,7 @@ ENV CYPRESS_INSTALL_BINARY=0
 COPY . .
 
 RUN npm install
+RUN npm run --workspace server typeorm:migration:generate
 RUN npm run --workspace server build
 RUN npm run --workspace client build
 RUN npm cache clean --force
@@ -17,4 +18,4 @@ RUN rm -rf target tmp
 
 EXPOSE <%- serverPort %>
 
-ENTRYPOINT ["node", "/usr/node-app/<%- nodeServerRootDir %>dist/main.js" ]
+ENTRYPOINT ["server/scripts/entrypoint.sh" ]
