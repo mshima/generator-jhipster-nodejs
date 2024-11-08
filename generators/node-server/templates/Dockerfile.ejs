@@ -17,4 +17,4 @@ RUN rm -rf target tmp
 
 EXPOSE <%- serverPort %>
 
-ENTRYPOINT ["server/scripts/entrypoint.sh" ]
+ENTRYPOINT ["/usr/node-app/server/scripts/entrypoint.sh" ]
