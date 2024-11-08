@@ -1,11 +1,11 @@
+import { readFile } from 'node:fs/promises';
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 import { TEMPLATES_WEBAPP_SOURCES_DIR } from 'generator-jhipster';
-import command from './command.js';
+import { SERVER_NODEJS_SRC_DIR } from '../generator-nodejs-constants.js';
 import { serverFiles } from './files.js';
 import { entityFiles } from './entity-files.js';
-import { SERVER_NODEJS_SRC_DIR } from '../generator-nodejs-constants.js';
 
 function sanitizeDbType(fieldType, dbType) {
   if (dbType === 'sqlite') {
@@ -45,6 +45,13 @@ const dbTypes = {
 };
 
 export default class extends BaseApplicationGenerator {
+  oldNodejsVersion;
+  nodejsPackageJson;
+
+  constructor(args, opts, features) {
+    super(args, opts, { ...features, queueCommandTasks: true });
+  }
+
   async beforeQueue() {
     await this.dependsOnJHipster('bootstrap-application');
     await this.dependsOnJHipster('common');
@@ -52,18 +59,10 @@ export default class extends BaseApplicationGenerator {
 
   get [BaseApplicationGenerator.INITIALIZING]() {
     return this.asInitializingTaskGroup({
-      async initializingTemplateTask() {
-        this.parseJHipsterCommand(command);
-      },
-    });
-  }
-
-  get [BaseApplicationGenerator.PROMPTING]() {
-    return this.asPromptingTaskGroup({
-      async promptingTemplateTask({ control }) {
-        if (control.existingProject && !this.options.askAnswered) return;
-
-        await this.prompt(this.prepareQuestions(command.configs));
+      async initializing() {
+        this.oldNodejsVersion = this.blueprintConfig.nodejsVersion ?? '3.0.0';
+        this.nodejsPackageJson = JSON.parse((await readFile(this.templatePath('../../../package.json'), 'utf-8')).toString());
+        this.blueprintConfig.nodejsVersion = this.nodejsPackageJson.version;
       },
     });
   }
@@ -95,52 +94,25 @@ export default class extends BaseApplicationGenerator {
     });
   }
 
-  get [BaseApplicationGenerator.CONFIGURING_EACH_ENTITY]() {
-    return this.asConfiguringEachEntityTaskGroup({
-      async configuringEachEntityTemplateTask({ entityConfig }) {
-        entityConfig.dto = true;
-      },
-    });
-  }
-
   get [BaseApplicationGenerator.LOADING_ENTITIES]() {
     return this.asLoadingEntitiesTaskGroup({
-      async loadingEntitiesTemplateTask() {},
-    });
-  }
-
-  get [BaseApplicationGenerator.PREPARING_EACH_ENTITY]() {
-    return this.asPreparingEachEntityTaskGroup({
-      async preparingEachEntityTemplateTask() {},
-    });
-  }
-
-  get [BaseApplicationGenerator.PREPARING_EACH_ENTITY_FIELD]() {
-    return this.asPreparingEachEntityFieldTaskGroup({
-      async preparingEachEntityFieldTemplateTask() {},
-    });
-  }
-
-  get [BaseApplicationGenerator.PREPARING_EACH_ENTITY_RELATIONSHIP]() {
-    return this.asPreparingEachEntityRelationshipTaskGroup({
-      async preparingEachEntityRelationshipTemplateTask() {},
-    });
-  }
-
-  get [BaseApplicationGenerator.POST_PREPARING_EACH_ENTITY]() {
-    return this.asPostPreparingEachEntityTaskGroup({
-      async postPreparingEachEntityTemplateTask() {},
-    });
-  }
-
-  get [BaseApplicationGenerator.DEFAULT]() {
-    return this.asDefaultTaskGroup({
-      async defaultTemplateTask() {},
+      async loadingEntitiesTemplateTask({ entitiesToLoad }) {
+        for (const entity of entitiesToLoad) {
+          entity.entityBootstrap.dto = true;
+        }
+      },
     });
   }
 
   get [BaseApplicationGenerator.WRITING]() {
     return this.asWritingTaskGroup({
+      async cleanup({ control }) {
+        if (control.existingProject) {
+          await control.cleanupFiles(this.oldNodejsVersion, {
+            '3.0.1': ['.server.eslintrc.json', '.server.eslintignore'],
+          });
+        }
+      },
       async writingTemplateTask({ application }) {
         await this.writeFiles({
           sections: serverFiles,
@@ -179,6 +151,20 @@ export default class extends BaseApplicationGenerator {
     });
   }
 
+  get [BaseApplicationGenerator.POST_WRITING]() {
+    return this.asPostWritingTaskGroup({
+      adjustWorkspacePackageJson({ application }) {
+        if (application.clientFrameworkAngular) {
+          this.packageJson.merge({
+            overrides: {
+              'browser-sync': application.nodeDependencies['browser-sync'],
+            },
+          });
+        }
+      },
+    });
+  }
+
   get [BaseApplicationGenerator.POST_WRITING_ENTITIES]() {
     return this.asPostWritingEntitiesTaskGroup({
       async postWritingEntitiesTemplateTask({ entities }) {
@@ -197,24 +183,6 @@ export default class extends BaseApplicationGenerator {
         }
       },
     });
-  }
-
-  get postWriting() {
-    return this.asPostWritingTaskGroup({
-      adjustWorkspacePackageJson({ application }) {
-        if (application.clientFrameworkAngular) {
-          this.packageJson.merge({
-            overrides: {
-              'browser-sync': application.nodeDependencies['browser-sync'],
-            },
-          });
-        }
-      },
-    });
-  }
-
-  get [BaseApplicationGenerator.POST_WRITING]() {
-    return this.delegateTasksToBlueprint(() => this.postWriting);
   }
 
   get [BaseApplicationGenerator.END]() {
