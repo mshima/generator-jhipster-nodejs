@@ -21,7 +21,7 @@
     "mongodb": "6.2.0",
     "mongodb-memory-server": "6.9.2",
     "mssql": "6.3.1",
-    "mysql2": "2.3.3",
+    "mysql2": "3.9.8",
     "oracledb": "5.5.0",
     "passport": "0.4.1",
     "passport-jwt": "4.0.0",
