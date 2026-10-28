@@ -1,8 +1,10 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
 import { defaultHelpers as helpers, result } from 'generator-jhipster/testing';
+
+import blueprintVersion from '../../cli/version.cjs';
 
 import { compareModulePaths } from './support/index.js';
 
@@ -825,7 +827,7 @@ describe('SubGenerator node-server of nodejs JHipster blueprint', () => {
       beforeAll(async function () {
         await helpers
           .run(SUB_GENERATOR_NAMESPACE)
-          .doInDir(writeExistingProject({}, JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')).version))
+          .doInDir(writeExistingProject({}, blueprintVersion))
           .withOptions({ ignoreNeedlesError: true })
           .withJHipsterGenerators()
           .withConfiguredBlueprint();

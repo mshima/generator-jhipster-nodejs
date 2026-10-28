@@ -6,6 +6,7 @@ import { createNeedleCallback } from 'generator-jhipster/generators/base-core/su
 import { createKeyStore } from 'generator-jhipster/generators/java/support';
 import { createBase64Secret, createReproducibleBase64Secret, mutateData } from 'generator-jhipster/utils';
 
+import blueprintVersion from '../../cli/version.cjs';
 import { SERVER_NODEJS_SRC_DIR } from '../generator-nodejs-constants.js';
 
 import { entityFiles } from './entity-files.js';
@@ -131,7 +132,11 @@ export default class extends BaseApplicationGenerator {
       async initializing() {
         this.existingNodejsVersion = this.blueprintConfig.nodejsVersion;
         this.oldNodejsVersion = this.existingNodejsVersion ?? '3.0.0';
-        this.nodejsPackageJson = JSON.parse((await readFile(this.templatePath('../../../package.json'), 'utf-8')).toString());
+        // The version of the blueprint, the one of its build-info.json for a build published under another version.
+        this.nodejsPackageJson = {
+          ...JSON.parse((await readFile(this.templatePath('../../../package.json'), 'utf-8')).toString()),
+          version: blueprintVersion,
+        };
         this.blueprintConfig.nodejsVersion = this.nodejsPackageJson.version;
       },
     });
