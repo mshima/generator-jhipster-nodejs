@@ -2,7 +2,7 @@
 module.exports = {
   printLogo: async () => {
     const { getLogo } = await import('./logo.js');
-    const { version } = require('../package.json');
+    const version = require('./version.cjs');
     console.log(getLogo(version));
   },
   printBlueprintLogo: undefined,
