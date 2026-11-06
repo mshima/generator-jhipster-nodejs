@@ -1,10 +1,11 @@
 import { 
 <%_ if (generateUserManagement) { _%> Body, Post, Query, 
-<%_ } _%>UseGuards, Controller, Get, HttpCode, Logger, Req, UseInterceptors, ClassSerializerInterceptor, InternalServerErrorException } from '@nestjs/common';
+<%_ } _%>UseGuards, Controller, Get, HttpCode, Logger, Req, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { AuthGuard } from './index.ts';
 <%_ if (generateUserManagement) { _%>
 import { PasswordChangeDTO } from './dto/password-change.dto.ts';
 import { KeyAndPasswordDTO } from './dto/key-and-password.dto.ts';
+import { AccountResourceException } from '../common/errors/problem.exception.ts';
 import { MailService } from '../mail/mail.service.ts';
 <%_ } _%>
 import { <% if (generateUserManagement) { %>Managed<%- userLoginVmClass %>, <% } %><%- userLoginVmClass %> } from '../users/dto/user.dto.ts';
@@ -33,12 +34,10 @@ export class AccountController {
   @ApiResponse({
     status: 201,
     description: 'Registered user',
-    type: <%- user.dtoClass %>,
   })
-  async registerAccount(@Req() req: { user: <%- userLoginVmClass %> }, @Body() userDTO: Managed<%- user.dtoClass %>): Promise<<%- user.dtoClass %>> {
+  async registerAccount(@Req() req: { user: <%- userLoginVmClass %> }, @Body() userDTO: Managed<%- user.dtoClass %>): Promise<void> {
     const user = await this.authService.registerNewUser(userDTO);
     void this.mailService.sendActivationEmail(user);
-    return user;
   }
 
   @Get('/activate')
@@ -47,25 +46,25 @@ export class AccountController {
     status: 200,
     description: 'activated',
   })
-  @ApiResponse({ status: 500, description: 'No user was found for this activation key' })
+  @ApiResponse({ status: 400, description: 'No user was found for this activation key' })
   async activateAccount(@Query('key') key: string): Promise<void> {
     const user = await this.authService.activateRegistration(key);
     if (!user) {
-      throw new InternalServerErrorException('No user was found for this activation key');
+      throw new AccountResourceException('No user was found for this activation key');
     }
   }
 
   @Get('/authenticate')
+  @HttpCode(204)
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Check if the user is authenticated' })
   @ApiResponse({
-    status: 200,
-    description: 'login authenticated',
+    status: 204,
+    description: 'authenticated',
   })
-  isAuthenticated(@Req() req: { user: <%- userLoginVmClass %> }): string {
-    const { user } = req;
-    return (user).login;
+  isAuthenticated(): void {
+    // The guard answers 401 to a request without a user.
   }
 
   @Get('/account')
@@ -98,11 +97,10 @@ export class AccountController {
   @ApiResponse({
     status: 200,
     description: 'user info updated',
-    type: <%- user.dtoClass %>,
   })
-  async saveAccount(@Req() req: { user: <%- userLoginVmClass %> }, @Body() newUserInfo: <%- user.dtoClass %>): Promise<<%- user.dtoClass %>> {
+  async saveAccount(@Req() req: { user: <%- userLoginVmClass %> }, @Body() newUserInfo: <%- user.dtoClass %>): Promise<void> {
     const { user } = req;
-    return await this.authService.updateUserSettings(user.login, newUserInfo);
+    await this.authService.updateUserSettings(user.login, newUserInfo);
   }
 
   @Post('/account/change-password')
