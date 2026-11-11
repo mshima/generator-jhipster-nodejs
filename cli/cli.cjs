@@ -2,7 +2,9 @@
 
 const { basename, dirname, join } = require('node:path');
 
-const { bin, version } = require('../package.json');
+const { bin } = require('../package.json');
+
+const version = require('./version.cjs');
 
 // Get package name to use as namespace.
 // Allows blueprints to be aliased.
