@@ -33,11 +33,26 @@ export class ParseUuidPipe implements PipeTransform<string, string> {
 }
 
 /** The values of a boolean parameter, like the StringToBooleanConverter of Spring. */
-const BOOLEANS = ['true', 'false', 'on', 'off', 'yes', 'no', '1', '0'];
+const TRUE_VALUES = ['true', 'on', 'yes', '1'];
+const FALSE_VALUES = ['false', 'off', 'no', '0'];
 
-/** Refuses a query parameter that is not a boolean, like the conversion of Spring: 400 with the value. */
-export const checkBooleanParameter = (name: string, value: unknown): void => {
-  if (value !== undefined && (typeof value !== 'string' || (value !== '' && !BOOLEANS.includes(value.toLowerCase())))) {
-    throw conversionFailure(name, typeof value === 'string' ? value : JSON.stringify(value));
+/**
+ * An optional boolean parameter, like the conversion of Spring: true, on, yes, 1 or false, off, no, 0 in any case, else
+ * 400 with the value. The ParseBoolPipe of Nest reads true and false only.
+ */
+@Injectable()
+export class ParseBooleanPipe implements PipeTransform<unknown, boolean | undefined> {
+  transform(value: unknown, { data }: ArgumentMetadata): boolean | undefined {
+    if (value === undefined || value === '') {
+      return undefined;
+    }
+    const text = typeof value === 'string' ? value.toLowerCase() : undefined;
+    if (text !== undefined && TRUE_VALUES.includes(text)) {
+      return true;
+    }
+    if (text !== undefined && FALSE_VALUES.includes(text)) {
+      return false;
+    }
+    throw conversionFailure(data, typeof value === 'string' ? value : JSON.stringify(value));
   }
-};
+}

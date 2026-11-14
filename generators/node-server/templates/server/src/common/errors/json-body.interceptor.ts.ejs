@@ -1,4 +1,4 @@
-import { CallHandler, ExecutionContext, HttpException, HttpStatus, Injectable, NestInterceptor, SetMetadata } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor, SetMetadata, UnsupportedMediaTypeException } from '@nestjs/common';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { Request } from 'express';
@@ -49,7 +49,7 @@ export class JsonBodyInterceptor implements NestInterceptor {
       const hasBody = headers['transfer-encoding'] !== undefined || Number(headers['content-length'] ?? 0) > 0;
       // A body without content type is of an unknown one.
       if (contentType === undefined ? hasBody : !JSON_TYPE.test(contentType.split(';')[0].trim())) {
-        throw new HttpException(unsupportedDetail(contentType ?? 'application/octet-stream', method), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        throw new UnsupportedMediaTypeException(unsupportedDetail(contentType ?? 'application/octet-stream', method));
       }
       if (!hasBody) {
         throw unreadableBodyException();

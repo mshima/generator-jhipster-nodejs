@@ -1,6 +1,6 @@
 import { STATUS_CODES } from 'http';
 
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger, NotFoundException } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger, MethodNotAllowedException, NotFoundException } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 import { HeaderUtil } from '../header-util.ts';
@@ -100,4 +100,4 @@ const isWithoutRoute = (exception: unknown, request: Request): boolean =>
 
 /** The error of a method the routes of the path do not have. */
 const methodNotAllowed = (request: Request): HttpException =>
-  new HttpException(`Request method '${request.method}' is not supported`, HttpStatus.METHOD_NOT_ALLOWED);
+  new MethodNotAllowedException(`Request method '${request.method}' is not supported`);

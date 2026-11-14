@@ -1,4 +1,4 @@
-import { CallHandler, ExecutionContext, HttpException, HttpStatus, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor, NotAcceptableException } from '@nestjs/common';
 import { Request } from 'express';
 import { Observable, map } from 'rxjs';
 
@@ -14,7 +14,7 @@ export class AcceptableResponseInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map(result => {
         if (context.getType() === 'http' && result !== null && typeof result === 'object' && !Buffer.isBuffer(result) && !request.accepts('json')) {
-          throw new HttpException('No acceptable representation', HttpStatus.NOT_ACCEPTABLE);
+          throw new NotAcceptableException('No acceptable representation');
         }
         return result;
       }),

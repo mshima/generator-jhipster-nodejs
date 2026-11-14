@@ -1,8 +1,10 @@
 <%_ const pkType = primaryKey.tsType;
     const idPipe = (pkType === 'number' && 'ParseLongPipe') || (primaryKey.typeUUID && 'ParseUuidPipe');
     const idParam = `@Param('id'${idPipe ? `, ${idPipe}` : ''}) id: ${pkType}`;
+    // The eagerload flag of the lists, like JHipster Spring Boot.
+    const eagerLoadFlag = !jpaMetamodelFiltering && implementsEagerLoadApis;
 _%>
-import { Body, ClassSerializerInterceptor, Controller, Delete, Get,<%- nodejsCriteria ? ' Header,' : '' %> Logger, NotFoundException, Param, Patch, Post as PostMethod, Put, UseGuards, Req, UseInterceptors } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Delete, Get,<%- nodejsCriteria ? ' Header,' : '' %> Logger, NotFoundException, Param, Patch, Post as PostMethod,<%- eagerLoadFlag ? ' Query,' : '' %> Put, UseGuards, Req, UseInterceptors } from '@nestjs/common';
 import { 
 <%_ if (authenticationTypeJwt) { _%> ApiBearerAuth, 
 <%_ } else { _%> ApiSecurity, 
@@ -16,7 +18,7 @@ import { PageRequest, Page } from '../../common/database/pagination.entity.ts';
 <%_ } _%>
 import { AuthGuard, <%- nodejsReadRoles ? 'Roles, ' : '' %>RolesGuard } from '../../auth/index.ts';
 import { HeaderUtil } from '../../common/header-util.ts';
-<%_ const parameterImports = [idPipe, !jpaMetamodelFiltering && implementsEagerLoadApis && 'checkBooleanParameter'].filter(Boolean); _%>
+<%_ const parameterImports = [idPipe, eagerLoadFlag && 'ParseBooleanPipe'].filter(Boolean); _%>
 <%_ if (parameterImports.length > 0) { _%>
 import { <%- parameterImports.join(', ') %> } from '../../common/parse-id.pipe.ts';
 <%_ } _%>
@@ -60,17 +62,19 @@ export class <%- entityClass %>Controller {
     type: <%- dtoClass %>,
     isArray: true,
   })
-<%_ const listReadsRequest = pagination !== 'no' || nodejsCriteria || (!jpaMetamodelFiltering && implementsEagerLoadApis) || nodejsMappedByRelationships.some(relationship => relationship.relationshipOneToOne); _%>
-  async getAll(@Req() <%- listReadsRequest ? 'req' : '_req' %>: Request): Promise<<%- dtoClass %> []>  {
+<%_ const listReadsRequest = pagination !== 'no' || nodejsCriteria || nodejsMappedByRelationships.some(relationship => relationship.relationshipOneToOne); _%>
+  async getAll(
+    @Req() <%- listReadsRequest ? 'req' : '_req' %>: Request,
+<%_ if (eagerLoadFlag) { _%>
+    // Like JHipster Spring Boot, the eagerload flag is a boolean (the relationships are loaded whatever it is).
+    @Query('eagerload', ParseBooleanPipe) _eagerload?: boolean,
+<%_ } _%>
+  ): Promise<<%- dtoClass %> []>  {
 <%_ for (const relationship of nodejsMappedByRelationships.filter(relationship => relationship.relationshipOneToOne)) { _%>
     // The records without <%- relationship.relationshipName %>, for the form of the other entity, like JHipster Spring Boot.
     if (req.query.filter === '<%- relationship.relationshipName.toLowerCase() %>-is-null') {
       return this.<%- entityInstance %>Service.findAllWhere<%- relationship.relationshipNameCapitalized %>IsNull();
     }
-<%_ } _%>
-<%_ if (!jpaMetamodelFiltering && implementsEagerLoadApis) { _%>
-    // Like JHipster Spring Boot, the eagerload flag is a boolean (the relationships are loaded whatever it is).
-    checkBooleanParameter('eagerload', req.query.eagerload);
 <%_ } _%>
 <%_ if (pagination === 'no') { _%>
     // Like JHipster Spring Boot, an entity without pagination lists all its records, without the pagination headers, and
