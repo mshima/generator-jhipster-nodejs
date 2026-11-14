@@ -107,6 +107,7 @@ export const serverFiles = {
         'src/common/errors/problem.exception.ts',
         'src/common/errors/body-validation.pipe.ts',
         'src/common/errors/json-body.interceptor.ts',
+        'src/common/errors/acceptable-response.interceptor.ts',
         'src/common/errors/problem.exception.spec.ts',
         'src/common/errors/problem-details.filter.ts',
         'src/common/errors/route-methods.ts',

@@ -11,17 +11,18 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { <%- dtoClass %> } from './dto/<%- entityFileName %>.dto.ts';
 import { <%- entityClass %>Service } from './<%- entityFileName %>.service.ts';
-<%_ if (pagination === 'no') { _%>
-import { PageRequest } from '../../common/database/pagination.entity.ts';
-<%_ } else { _%>
+<%_ if (pagination !== 'no') { _%>
 import { PageRequest, Page } from '../../common/database/pagination.entity.ts';
 <%_ } _%>
 import { AuthGuard, <%- nodejsReadRoles ? 'Roles, ' : '' %>RolesGuard } from '../../auth/index.ts';
 import { HeaderUtil } from '../../common/header-util.ts';
-<%_ if (idPipe) { _%>
-import { <%- idPipe %> } from '../../common/parse-id.pipe.ts';
+<%_ const parameterImports = [idPipe, !jpaMetamodelFiltering && implementsEagerLoadApis && 'checkBooleanParameter'].filter(Boolean); _%>
+<%_ if (parameterImports.length > 0) { _%>
+import { <%- parameterImports.join(', ') %> } from '../../common/parse-id.pipe.ts';
 <%_ } _%>
+<%_ if (pagination !== 'no') { _%>
 import { isSortableProperty } from '../../common/sortable-properties.ts';
+<%_ } _%>
 <%_ if (nodejsCriteria) { _%>
 import { criteriaOf, criteriaWhere } from '../../common/database/criteria.ts';
 <%_ } _%>
@@ -59,13 +60,29 @@ export class <%- entityClass %>Controller {
     type: <%- dtoClass %>,
     isArray: true,
   })
-  async getAll(@Req() req: Request): Promise<<%- dtoClass %> []>  {
+<%_ const listReadsRequest = pagination !== 'no' || nodejsCriteria || (!jpaMetamodelFiltering && implementsEagerLoadApis) || nodejsMappedByRelationships.some(relationship => relationship.relationshipOneToOne); _%>
+  async getAll(@Req() <%- listReadsRequest ? 'req' : '_req' %>: Request): Promise<<%- dtoClass %> []>  {
 <%_ for (const relationship of nodejsMappedByRelationships.filter(relationship => relationship.relationshipOneToOne)) { _%>
     // The records without <%- relationship.relationshipName %>, for the form of the other entity, like JHipster Spring Boot.
     if (req.query.filter === '<%- relationship.relationshipName.toLowerCase() %>-is-null') {
       return this.<%- entityInstance %>Service.findAllWhere<%- relationship.relationshipNameCapitalized %>IsNull();
     }
 <%_ } _%>
+<%_ if (!jpaMetamodelFiltering && implementsEagerLoadApis) { _%>
+    // Like JHipster Spring Boot, the eagerload flag is a boolean (the relationships are loaded whatever it is).
+    checkBooleanParameter('eagerload', req.query.eagerload);
+<%_ } _%>
+<%_ if (pagination === 'no') { _%>
+    // Like JHipster Spring Boot, an entity without pagination lists all its records, without the pagination headers, and
+    // reads no sort: the clients sort its list.
+    const [results] = await this.<%- entityInstance %>Service.findAndCount({
+  <%_ if (nodejsCriteria) { _%>
+      where: criteriaWhere(req.query, criteriaOf(this.<%- entityInstance %>Service.metadata)),
+  <%_ } _%>
+      order: { <%- primaryKey.name %>: 'ASC' },
+    });
+    return results;
+<%_ } else { _%>
     const pageRequest: PageRequest = new PageRequest(
       req.query.page,
       req.query.size,
@@ -73,16 +90,6 @@ export class <%- entityClass %>Controller {
       property => isSortableProperty(this.<%- entityInstance %>Service.metadata, property),
       ENTITY_NAME,
     );
-<%_ if (pagination === 'no') { _%>
-    // Like JHipster Spring Boot, an entity without pagination lists all its records, without the pagination headers.
-    const [results] = await this.<%- entityInstance %>Service.findAndCount({
-  <%_ if (nodejsCriteria) { _%>
-      where: criteriaWhere(req.query, criteriaOf(this.<%- entityInstance %>Service.metadata)),
-  <%_ } _%>
-      order: pageRequest.asOrder(),
-    });
-    return results;
-<%_ } else { _%>
     const [results, count] = await this.<%- entityInstance %>Service.findAndCount({
   <%_ if (nodejsCriteria) { _%>
       where: criteriaWhere(req.query, criteriaOf(this.<%- entityInstance %>Service.metadata)),

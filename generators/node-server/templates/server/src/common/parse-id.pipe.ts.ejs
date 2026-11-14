@@ -31,3 +31,13 @@ export class ParseUuidPipe implements PipeTransform<string, string> {
     return value;
   }
 }
+
+/** The values of a boolean parameter, like the StringToBooleanConverter of Spring. */
+const BOOLEANS = ['true', 'false', 'on', 'off', 'yes', 'no', '1', '0'];
+
+/** Refuses a query parameter that is not a boolean, like the conversion of Spring: 400 with the value. */
+export const checkBooleanParameter = (name: string, value: unknown): void => {
+  if (value !== undefined && (typeof value !== 'string' || (value !== '' && !BOOLEANS.includes(value.toLowerCase())))) {
+    throw conversionFailure(name, typeof value === 'string' ? value : JSON.stringify(value));
+  }
+};

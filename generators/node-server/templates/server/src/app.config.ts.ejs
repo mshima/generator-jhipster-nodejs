@@ -9,6 +9,7 @@ import session from 'express-session';
 
 import type { ApplicationConfig } from './application-config.ts';
 import { HeaderUtil } from './common/header-util.ts';
+import { AcceptableResponseInterceptor } from './common/errors/acceptable-response.interceptor.ts';
 import { JsonBodyInterceptor } from './common/errors/json-body.interceptor.ts';
 import { ProblemDetailsFilter } from './common/errors/problem-details.filter.ts';
 import { routeMethods } from './common/errors/route-methods.ts';
@@ -67,6 +68,18 @@ export function corsOptions(configService: AppConfigService): CorsOptions | unde
     credentials,
     ...(maxAge > 0 ? { maxAge } : {}),
   };
+}
+
+/** The decoder of the JSON bodies, which refuses a byte sequence that is not UTF-8. */
+const UTF8 = new TextDecoder('utf-8', { fatal: true });
+
+/** Refuses a body that is not UTF-8, a SyntaxError like the one of a malformed JSON body (400). */
+function rejectInvalidUtf8(_req: unknown, _res: unknown, body: Buffer): void {
+  try {
+    UTF8.decode(body);
+  } catch {
+    throw Object.assign(new SyntaxError('The body is not UTF-8'), { status: 400 });
+  }
 }
 
 /**
@@ -168,7 +181,7 @@ export function configureApp(app: INestApplication): INestApplication {
     }),
   );
   // A body of another content type than JSON refused, like JHipster Spring Boot.
-  app.useGlobalInterceptors(new JsonBodyInterceptor());
+  app.useGlobalInterceptors(new JsonBodyInterceptor(), new AcceptableResponseInterceptor());
   // The errors as the problem details of JHipster Spring Boot.
   app.useGlobalFilters(new ProblemDetailsFilter(app.get(HeaderUtil), path => routeMethods(app, path)));
 <%_ if (generateUserManagement) { _%>
@@ -178,7 +191,10 @@ export function configureApp(app: INestApplication): INestApplication {
   // The JSON bodies up to 10 MB, the blobs of the entities as base64 included (the 100 KB default of Express refused an
   // image of about 75 KB with 413). Like JHipster Spring Boot, application/json and the types of its suffix: the partial
   // updates (PATCH) accept application/merge-patch+json.
-  (app as NestExpressApplication).useBodyParser('json', { limit: '10mb', type: ['json', '+json'] });
+  // A body that is not UTF-8 is refused like a malformed one, as the JSON deserialization of Spring does. Nest passes the
+  // verify function to the parser without its rawBody option, which its type leaves out.
+  const jsonOptions = { limit: '10mb', type: ['json', '+json'], verify: rejectInvalidUtf8 };
+  (app as NestExpressApplication).useBodyParser('json', jsonOptions);
   // Disable cache.
   app.getHttpAdapter().getInstance().set('etag', false);
   return app;

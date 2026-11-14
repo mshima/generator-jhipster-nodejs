@@ -273,9 +273,10 @@ exports[`SubGenerator node-server of nodejs JHipster blueprint > entity validato
 {
   "server/src/entities/book/dto/book.dto.ts": {
     "contents": "import { ApiProperty } from '@nestjs/swagger';
-import { Allow, IsNotEmpty, IsOptional, IsEnum, MinLength, MaxLength, Length, Min, Max, Matches, IsInt, IsNumber, IsBoolean, IsUUID, IsISO8601 } from 'class-validator';
+import { Allow, IsNotEmpty, IsOptional, IsEnum, MinLength, MaxLength, Length, Min, Max, Matches, IsInt, IsNumber, IsBoolean, IsUUID, IsISO8601, IsBase64 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { numberFromString } from '../../../common/dto/dto-support.ts';
+import { UNREADABLE } from '../../../common/errors/problem.exception.ts';
 
 
 import { Genre } from '../../enumeration/genre.ts';
@@ -318,6 +319,7 @@ export class BookDTO {
         format!: BookFormat;
 
             @IsNotEmpty()
+    @IsBase64({}, UNREADABLE)
             @ApiProperty({ description: "cover field" })
         cover!: string;
 
@@ -535,6 +537,9 @@ exports[`SubGenerator node-server of nodejs JHipster blueprint > jwt microservic
     "stateCleared": "modified",
   },
   "server/src/common/dto/dto-support.ts": {
+    "stateCleared": "modified",
+  },
+  "server/src/common/errors/acceptable-response.interceptor.ts": {
     "stateCleared": "modified",
   },
   "server/src/common/errors/body-validation.pipe.ts": {
@@ -927,6 +932,9 @@ exports[`SubGenerator node-server of nodejs JHipster blueprint > run > should ma
     "stateCleared": "modified",
   },
   "server/src/common/dto/dto-support.ts": {
+    "stateCleared": "modified",
+  },
+  "server/src/common/errors/acceptable-response.interceptor.ts": {
     "stateCleared": "modified",
   },
   "server/src/common/errors/body-validation.pipe.ts": {
@@ -1381,6 +1389,9 @@ exports[`SubGenerator node-server of nodejs JHipster blueprint > with oauth2 > s
   "server/src/common/dto/dto-support.ts": {
     "stateCleared": "modified",
   },
+  "server/src/common/errors/acceptable-response.interceptor.ts": {
+    "stateCleared": "modified",
+  },
   "server/src/common/errors/body-validation.pipe.ts": {
     "stateCleared": "modified",
   },
@@ -1780,6 +1791,9 @@ exports[`SubGenerator node-server of nodejs JHipster blueprint > with oauth2 and
     "stateCleared": "modified",
   },
   "server/src/common/dto/dto-support.ts": {
+    "stateCleared": "modified",
+  },
+  "server/src/common/errors/acceptable-response.interceptor.ts": {
     "stateCleared": "modified",
   },
   "server/src/common/errors/body-validation.pipe.ts": {
@@ -2616,6 +2630,9 @@ exports[`SubGenerator node-server of nodejs JHipster blueprint > without client 
     "stateCleared": "modified",
   },
   "server/src/common/dto/dto-support.ts": {
+    "stateCleared": "modified",
+  },
+  "server/src/common/errors/acceptable-response.interceptor.ts": {
     "stateCleared": "modified",
   },
   "server/src/common/errors/body-validation.pipe.ts": {
