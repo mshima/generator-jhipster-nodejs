@@ -1,5 +1,7 @@
 import { Controller, Get, NotFoundException, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
+import type { ApplicationConfig } from '../application-config.ts';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { Response } from 'express';
 
@@ -24,7 +26,7 @@ export interface ThreadInfo {
 export class MetricsController {
   constructor(
     private readonly metricsService: MetricsService,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService<ApplicationConfig, true>,
   ) {}
 
   @Get('/jhimetrics')
@@ -45,7 +47,8 @@ export class MetricsController {
   @Get('/prometheus')
   @SkipLogging()
   async prometheus(@Res({ passthrough: true }) response: Response): Promise<string> {
-    if (String(this.configService.get('management.prometheus.metrics.export.enabled')) !== 'true') {
+    // A property of a file or of the environment, a boolean or its text.
+    if (String(this.configService.get('management.prometheus.metrics.export.enabled', { infer: true })) !== 'true') {
       throw new NotFoundException();
     }
     response.type(this.metricsService.registry.contentType);
