@@ -1,6 +1,6 @@
 {
-  "name": "generator-jhipster-nodejs",
-  "version": "4.2.0",
+  "name": "@mshima/generator-jhipster-nodejs",
+  "version": "0.0.9",
   "description": "A NodeJS blueprint that creates the backend using NodeJS with NestJS framework",
   "keywords": [
     "yeoman-generator",
@@ -53,7 +53,7 @@
   },
   "dependencies": {
     "chalk": "^5.3.0",
-    "generator-jhipster": "github:jhipster/generator-jhipster#bb8d642c8c7f83fc016d3d062f9715deb0b1ca1f"
+    "generator-jhipster": "npm:@mshima/generator-jhipster@0.0.16"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "5.10.0",
@@ -71,10 +71,12 @@
     "yeoman-test": ">=10"
   },
   "engines": {
-    "generator-jhipster": "9.4.0",
+    "generator-jhipster": "9.5.0-next.0",
     "node": "^22.18.0 || >=24.11.0"
   },
-  "allowScripts": {
-    "github:jhipster/generator-jhipster#bb8d642c8c7f83fc016d3d062f9715deb0b1ca1f": true
+  "yeoman": {
+    "meta": {
+      "packageVersion": "4.3.0-next.4"
+    }
   }
 }
